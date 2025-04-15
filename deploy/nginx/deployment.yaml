@@ -3,17 +3,34 @@ kind: Deployment
 metadata:
   name: nginx-deployment
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: nginx
-  replicas: 2 # tells deployment to run 2 pods matching the template
   template:
     metadata:
       labels:
         app: nginx
     spec:
+      initContainers:
+      - name: clone-repo
+        image: alpine:latest
+        command: ["sh", "-c", "apk add --no-cache git && git clone --depth 1 --branch main https://github.com/andre4freelance/Kubernetes-Playground.git /mnt/git && cp -r /mnt/git/html/* /mnt/html"]
+        volumeMounts:
+        - name: git-volume
+          mountPath: /mnt/git
+        - name: html-volume
+          mountPath: /mnt/html
       containers:
       - name: nginx
         image: nginx:latest
         ports:
         - containerPort: 80
+        volumeMounts:
+        - name: html-volume
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: git-volume
+        emptyDir: {}
+      - name: html-volume
+        emptyDir: {}
